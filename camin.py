@@ -37,32 +37,32 @@ def get_room_number(today: datetime) -> str:
     room_num = (count % 21) + 1
     return f"{room_num:02d}"
 
-# 🧼 Отправка напоминания в 22:00
 async def send_reminders():
     await bot.delete_webhook(drop_pending_updates=True)
-    while True:
-        now = datetime.now(pytz.timezone("Europe/Chisinau"))
-        if now.weekday() in [0, 1, 2, 3] and now.hour == 22 and now.minute == 0:
-            date_str = now.strftime("%d.%m.%Y")
-            weekday_str = {
-                0: "понедельник",
-                1: "вторник",
-                2: "среда",
-                3: "четверг"
-            }[now.weekday()]
-            room = get_room_number(now)
-            message = (
-                f"🧼 Сегодня {date_str} ({weekday_str})\n"
-                f"Комната {room} — уборка кухни в 22:00"
-            )
-            for chat_id in known_chats:
-                try:
-                    await bot.send_message(chat_id, message)
-                    print(f"📨 Отправлено в {chat_id}: комната {room}")
-                except Exception as e:
-                    print(f"❌ Ошибка в {chat_id}: {e}")
-            await asyncio.sleep(60)
-        await asyncio.sleep(10)
+    await asyncio.sleep(360)  # ждем 120 секунд (2 минуты)
+    
+    now = datetime.now(pytz.timezone("Europe/Chisinau"))
+    date_str = now.strftime("%d.%m.%Y")
+    weekday_str = {
+        0: "понедельник",
+        1: "вторник",
+        2: "среда",
+        3: "четверг",
+        4: "пятница",
+        5: "суббота",
+        6: "воскресенье"
+    }[now.weekday()]
+    room = get_room_number(now)
+    message = (
+        f"🧼 Сегодня {date_str} ({weekday_str})\n"
+        f"Комната {room} — уборка кухни в 22:00"
+    )
+    for chat_id in known_chats:
+        try:
+            await bot.send_message(chat_id, message)
+            print(f"📨 Отправлено в {chat_id}: комната {room}")
+        except Exception as e:
+            print(f"❌ Ошибка в {chat_id}: {e}")
 
 # 🌐 Сервер для Render
 class DummyHandler(BaseHTTPRequestHandler):

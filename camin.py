@@ -4,45 +4,40 @@ from aiogram.types import ChatMemberUpdated
 from aiogram.enums import ChatMemberStatus
 from datetime import datetime, timedelta
 import pytz
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import os
 
-# 🔐 Твой токен:
 TOKEN = "8120850189:AAE2fvg-eqmRwHaGvfIznwEvOOAG6ZQUvIc"
-
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# 🧾 Дата начала дежурств:
+# 📅 Дата начала отсчёта дежурств
 START_DATE = datetime(2025, 9, 1)
 
-# Группы этажей: подставишь свои ID ниже после добавления бота в группы
-group_floor_map = {
-    -1000000000001: 2,  # ID группы этажа 2
-    -1000000000002: 3,  # ID группы этажа 3
-    -1000000000003: 4,  # ID группы этажа 4
-    -1000000000004: 5,  # ID группы этажа 5
-}
+# 💾 Список всех чатов, куда бот отправляет (будет автоматически пополняться)
+known_chats = set()
 
-# Когда бот добавляется в новую группу — автоматически запоминаем её
+# 📌 Добавлен в новую группу
 @dp.chat_member()
-async def on_added_to_group(event: ChatMemberUpdated):
+async def on_added(event: ChatMemberUpdated):
     if event.new_chat_member.status == ChatMemberStatus.MEMBER:
         chat_id = event.chat.id
+        known_chats.add(chat_id)
         print(f"✅ Бот добавлен в группу: {event.chat.title} ({chat_id})")
-        # ❗ Добавь вручную соответствие этажу (2, 3, 4, 5)
-        # Пример: group_floor_map[chat_id] = 3
 
-# 🧼 Функция определения номера дежурной комнаты
-def get_room_number(floor: int, today: datetime) -> int:
+# 🔢 Получить номер комнаты от 01 до 21
+def get_room_number(today: datetime) -> str:
     current = START_DATE
     count = 0
     while current.date() < today.date():
-        if current.weekday() in [0, 1, 2, 3]:  # ПН-ЧТ
+        if current.weekday() in [0, 1, 2, 3]:  # ПН–ЧТ
             count += 1
         current += timedelta(days=1)
-    offset = count % 21
-    return floor * 100 + 1 + offset
+    room_num = (count % 21) + 1
+    return f"{room_num:02d}"
 
-# 📤 Отправка напоминаний
+# 🧼 Отправка напоминания в 22:00
 async def send_reminders():
     await bot.delete_webhook(drop_pending_updates=True)
     while True:
@@ -55,26 +50,38 @@ async def send_reminders():
                 2: "среда",
                 3: "четверг"
             }[now.weekday()]
-            for chat_id, floor in group_floor_map.items():
-                room_number = get_room_number(floor, now)
-                message = (
-                    f"🧼 Сегодня {date_str} ({weekday_str})\n"
-                    f"Комната {room_number} — уборка кухни в 22:00"
-                )
+            room = get_room_number(now)
+            message = (
+                f"🧼 Сегодня {date_str} ({weekday_str})\n"
+                f"Комната {room} — уборка кухни в 22:00"
+            )
+            for chat_id in known_chats:
                 try:
                     await bot.send_message(chat_id, message)
-                    print(f"📨 Отправлено в {chat_id}: комната {room_number}")
+                    print(f"📨 Отправлено в {chat_id}: комната {room}")
                 except Exception as e:
                     print(f"❌ Ошибка в {chat_id}: {e}")
-            await asyncio.sleep(60)  # Ждём минуту, чтобы не дублировал
+            await asyncio.sleep(60)
         await asyncio.sleep(10)
 
+# 🌐 Сервер для Render
+class DummyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"I'm alive!")
+
+def run_http_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(('', port), DummyHandler)
+    server.serve_forever()
+
+# 🚀 Запуск
 async def main():
     print("🚀 Бот запущен")
+    asyncio.create_task(send_reminders())
     await dp.start_polling(bot)
 
-# 🔁 Запуск
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.create_task(send_reminders())
-    loop.run_until_complete(main())
+    threading.Thread(target=run_http_server, daemon=True).start()
+    asyncio.run(main())

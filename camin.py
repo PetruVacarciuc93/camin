@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import ChatMemberUpdated, ChatMemberStatus
+from aiogram.types import ChatMemberUpdated
 from datetime import datetime, timedelta
 import pytz
 import threading
@@ -16,7 +16,8 @@ known_chats = set()
 
 @dp.chat_member()
 async def on_added(event: ChatMemberUpdated):
-    if event.new_chat_member.status == ChatMemberStatus.MEMBER:
+    # Вместо ChatMemberStatus.MEMBER сравниваем с "member"
+    if event.new_chat_member.status == "member":
         chat_id = event.chat.id
         known_chats.add(chat_id)
         print(f"✅ Бот добавлен в группу: {event.chat.title} ({chat_id})")
@@ -33,7 +34,7 @@ def get_room_number(today: datetime) -> str:
 
 async def send_reminders():
     await bot.delete_webhook(drop_pending_updates=True)
-    await asyncio.sleep(120)  # 2 минуты ожидания
+    await asyncio.sleep(120)
     
     now = datetime.now(pytz.timezone("Europe/Chisinau"))
     date_str = now.strftime("%d.%m.%Y")

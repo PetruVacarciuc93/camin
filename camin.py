@@ -10,15 +10,11 @@ import os
 
 TOKEN = "8120850189:AAE2fvg-eqmRwHaGvfIznwEvOOAG6ZQUvIc"
 bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
-# 📅 Дата начала отсчёта дежурств
 START_DATE = datetime(2025, 9, 1)
-
-# 💾 Список всех чатов, куда бот отправляет (будет автоматически пополняться)
 known_chats = set()
 
-# 📌 Добавлен в новую группу
 @dp.chat_member()
 async def on_added(event: ChatMemberUpdated):
     if event.new_chat_member.status == ChatMemberStatus.MEMBER:
@@ -26,12 +22,11 @@ async def on_added(event: ChatMemberUpdated):
         known_chats.add(chat_id)
         print(f"✅ Бот добавлен в группу: {event.chat.title} ({chat_id})")
 
-# 🔢 Получить номер комнаты от 01 до 21
 def get_room_number(today: datetime) -> str:
     current = START_DATE
     count = 0
     while current.date() < today.date():
-        if current.weekday() in [0, 1, 2, 3]:  # ПН–ЧТ
+        if current.weekday() in [0, 1, 2, 3]:  # Пн–Чт
             count += 1
         current += timedelta(days=1)
     room_num = (count % 21) + 1
@@ -53,10 +48,8 @@ async def send_reminders():
         6: "воскресенье"
     }[now.weekday()]
     room = get_room_number(now)
-    message = (
-        f"🧼 Сегодня {date_str} ({weekday_str})\n"
-        f"Комната {room} — уборка кухни в 22:00"
-    )
+    message = f"🧼 Сегодня {date_str} ({weekday_str})\nКомната {room} — уборка кухни в 22:00"
+    
     for chat_id in known_chats:
         try:
             await bot.send_message(chat_id, message)
@@ -64,7 +57,6 @@ async def send_reminders():
         except Exception as e:
             print(f"❌ Ошибка в {chat_id}: {e}")
 
-# 🌐 Простой HTTP сервер для поддержки хоста (Render, Railway)
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -76,11 +68,10 @@ def run_http_server():
     server = HTTPServer(('', port), DummyHandler)
     server.serve_forever()
 
-# 🚀 Точка входа
 async def main():
     print("🚀 Бот запущен")
     asyncio.create_task(send_reminders())
-    await dp.start_polling()
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     threading.Thread(target=run_http_server, daemon=True).start()

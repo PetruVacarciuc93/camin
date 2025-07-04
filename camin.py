@@ -16,7 +16,7 @@ known_chats = set()
 
 @dp.chat_member()
 async def on_added(event: ChatMemberUpdated):
-    # Вместо ChatMemberStatus.MEMBER сравниваем с "member"
+    # Сравниваем со строкой "member"
     if event.new_chat_member.status == "member":
         chat_id = event.chat.id
         known_chats.add(chat_id)

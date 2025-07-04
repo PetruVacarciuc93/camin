@@ -1,7 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import ChatMemberUpdated
-from aiogram.enums import ChatMemberStatus
+from aiogram.types import ChatMemberUpdated, ChatMemberStatus
 from datetime import datetime, timedelta
 import pytz
 import threading
@@ -10,7 +9,7 @@ import os
 
 TOKEN = "8120850189:AAE2fvg-eqmRwHaGvfIznwEvOOAG6ZQUvIc"
 bot = Bot(token=TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(bot)
 
 # 📅 Дата начала отсчёта дежурств
 START_DATE = datetime(2025, 9, 1)
@@ -39,7 +38,7 @@ def get_room_number(today: datetime) -> str:
 
 async def send_reminders():
     await bot.delete_webhook(drop_pending_updates=True)
-    await asyncio.sleep(360)  # ждем 120 секунд (2 минуты)
+    await asyncio.sleep(120)  # Ждём 120 секунд (2 минуты)
     
     now = datetime.now(pytz.timezone("Europe/Chisinau"))
     date_str = now.strftime("%d.%m.%Y")
@@ -64,7 +63,7 @@ async def send_reminders():
         except Exception as e:
             print(f"❌ Ошибка в {chat_id}: {e}")
 
-# 🌐 Сервер для Render
+# 🌐 Сервер для Render (или Railway)
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)

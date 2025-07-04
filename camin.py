@@ -16,8 +16,7 @@ known_chats = set()
 
 @dp.chat_member()
 async def on_added(event: ChatMemberUpdated):
-    # Сравниваем со строкой "member"
-    if event.new_chat_member.status == "member":
+    if event.new_chat_member.status == "member":  # строка "member"
         chat_id = event.chat.id
         known_chats.add(chat_id)
         print(f"✅ Бот добавлен в группу: {event.chat.title} ({chat_id})")

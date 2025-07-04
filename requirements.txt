@@ -1,3 +1,3 @@
-aiogram==3.2.0
+aiogram==3.1.1
 pytz
-pydantic==2.4.2
+pydantic==1.10.12

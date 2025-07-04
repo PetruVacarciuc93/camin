@@ -1,7 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-from aiogram.types import ChatMemberUpdated
-from aiogram.enums import ChatMemberStatus
+from aiogram.types import ChatMemberUpdated, ChatMemberStatus
 from datetime import datetime, timedelta
 import pytz
 import threading
@@ -26,7 +25,7 @@ def get_room_number(today: datetime) -> str:
     current = START_DATE
     count = 0
     while current.date() < today.date():
-        if current.weekday() in [0, 1, 2, 3]:  # Пн–Чт
+        if current.weekday() in [0, 1, 2, 3]:
             count += 1
         current += timedelta(days=1)
     room_num = (count % 21) + 1
@@ -34,7 +33,7 @@ def get_room_number(today: datetime) -> str:
 
 async def send_reminders():
     await bot.delete_webhook(drop_pending_updates=True)
-    await asyncio.sleep(120)  # Ждём 2 минуты
+    await asyncio.sleep(120)  # 2 минуты ожидания
     
     now = datetime.now(pytz.timezone("Europe/Chisinau"))
     date_str = now.strftime("%d.%m.%Y")
@@ -48,8 +47,10 @@ async def send_reminders():
         6: "воскресенье"
     }[now.weekday()]
     room = get_room_number(now)
-    message = f"🧼 Сегодня {date_str} ({weekday_str})\nКомната {room} — уборка кухни в 22:00"
-    
+    message = (
+        f"🧼 Сегодня {date_str} ({weekday_str})\n"
+        f"Комната {room} — уборка кухни в 22:00"
+    )
     for chat_id in known_chats:
         try:
             await bot.send_message(chat_id, message)

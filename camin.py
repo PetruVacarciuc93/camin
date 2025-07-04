@@ -1,7 +1,7 @@
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.types import ChatMemberUpdated
-from aiogram.types.chat_member import ChatMemberStatus
+from aiogram.enums import ChatMemberStatus
 from datetime import datetime, timedelta
 import pytz
 import threading
